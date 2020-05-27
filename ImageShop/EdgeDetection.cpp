@@ -1,7 +1,6 @@
 #include "EdgeDetection.h"
 #include "ImageShop.h"
 #include <opencv2/imgproc.hpp>
-#include <qdebug.h>
 
 using namespace cv;
 
@@ -18,7 +17,8 @@ EdgeDetection::EdgeDetection(QImage src, ImageShop *parent)
     case QImage::Format_RGB32:
         source = Mat(src.height(), src.width(), CV_8UC4,
             (void *)src.constBits(), src.bytesPerLine());
-        cvtColor(source, source, COLOR_BGRA2RGB);
+        cvtColor(source, source, COLOR_BGRA2RGB); // big endian
+        // cvtColor(source, source, COLOR_RGBA2RGB); // little endian
         break;
     case QImage::Format_ARGB32:
         source = Mat(src.height(), src.width(), CV_8UC4,
@@ -28,12 +28,9 @@ EdgeDetection::EdgeDetection(QImage src, ImageShop *parent)
         break;
     }
 
-    connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-        this, &EdgeDetection::onTuneUi);
-    connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-        this, &EdgeDetection::onDetectEdge);
-    connect(ui.comboBoxDirection, QOverload<int>::of(&QComboBox::currentIndexChanged),
-        this, &EdgeDetection::onDetectEdge);
+    connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EdgeDetection::onTuneUi);
+    connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EdgeDetection::onDetectEdge);
+    connect(ui.comboBoxDirection, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &EdgeDetection::onDetectEdge);
     connect(ui.sliderR, &QSlider::valueChanged, this, &EdgeDetection::onSetR);
     connect(ui.sliderR, &QSlider::valueChanged, this, &EdgeDetection::onDetectEdge);
     connect(ui.sliderThreshold1, &QSlider::valueChanged, this, &EdgeDetection::onSetThreshold1);
@@ -49,11 +46,7 @@ EdgeDetection::EdgeDetection(QImage src, ImageShop *parent)
     ui.sliderR->hide();
     ui.valueR->hide();
     adjustSize();
-    qDebug() << windowFlags();
-    setWindowFlags(
-        (windowFlags() | Qt::MSWindowsFixedSizeDialogHint)
-        & ~Qt::WindowContextHelpButtonHint);
-    qDebug() << windowFlags();
+    setWindowFlags((windowFlags() | Qt::MSWindowsFixedSizeDialogHint) & ~Qt::WindowContextHelpButtonHint);
     ui.labelThreshold1->hide();
     ui.sliderThreshold1->hide();
     ui.valueThreshold1->hide();

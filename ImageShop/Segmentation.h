@@ -10,13 +10,13 @@ class Segmentation : public QDialog
 
 public:
     Segmentation(QImage src, ImageShop *parent = Q_NULLPTR);
-signals:
-    void sendImage(QImage);
 public slots:
     void onSetThreshold();
     void onSegment();
     void onOtsu();
     void onTriangle();
+signals:
+    void sendImage(QImage);
 private:
     Ui::Segmentation ui;
     cv::Mat source;

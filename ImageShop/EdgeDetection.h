@@ -10,14 +10,14 @@ class EdgeDetection : public QDialog
 
 public:
     EdgeDetection(QImage src, ImageShop *parent = Q_NULLPTR);
-signals:
-    void sendImage(QImage);
 public slots:
     void onTuneUi();
     void onSetR();
     void onSetThreshold1();
     void onSetThreshold2();
     void onDetectEdge();
+signals:
+    void sendImage(QImage);
 private:
     Ui::EdgeDetection ui;
     cv::Mat source;

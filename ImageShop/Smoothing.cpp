@@ -1,30 +1,17 @@
 #include "Smoothing.h"
 #include "ImageShop.h"
-#include "Help.h"
 #include <opencv2/imgproc.hpp>
+#include <qdebug.h>
 
 using namespace cv;
 
 Smoothing::Smoothing(QImage src, ImageShop *parent)
     : QDialog(parent) {
     ui.setupUi(this);
+    worker = new Worker(src);
+    worker->moveToThread(&thread);
 
-    switch (src.format())
-    {
-    case QImage::Format_Grayscale8:
-        source = Mat(src.height(), src.width(), CV_8UC1, (void *)src.constBits(), src.bytesPerLine());
-        break;
-    case QImage::Format_RGB32:
-        source = Mat(src.height(), src.width(), CV_8UC4, (void *)src.constBits(), src.bytesPerLine());
-        cvtColor(source, source, COLOR_BGRA2RGB);
-        break;
-    case QImage::Format_ARGB32:
-        source = Mat(src.height(), src.width(), CV_8UC4, (void *)src.constBits(), src.bytesPerLine());
-        break;
-    default:
-        break;
-    }
-    
+    connect(&thread, &QThread::finished, worker, &QObject::deleteLater);
     connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Smoothing::onTuneUi);
     connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Smoothing::onSmooth);
     connect(ui.sliderR, &QSlider::valueChanged, this, &Smoothing::onSetR);
@@ -36,8 +23,9 @@ Smoothing::Smoothing(QImage src, ImageShop *parent)
     connect(ui.sliderSigmaS, &QSlider::valueChanged, this, &Smoothing::onSetSigmaS);
     connect(ui.sliderSigmaS, &QSlider::valueChanged, this, &Smoothing::onSmooth);
     connect(ui.pushButton, &QPushButton::clicked, this, &Smoothing::accept);
-    connect(ui.pushButtonHelp, &QPushButton::clicked, this, &Smoothing::onHelp);
-    connect(this, &Smoothing::sendImage, parent, &ImageShop::onReceiveTarget);
+    connect(this, &Smoothing::sendParameter, worker, &Worker::onSmooth);
+    connect(worker, &Worker::sendImage, parent, &ImageShop::onReceiveTarget);
+    thread.start();
 
     ui.labelR->hide();
     ui.sliderR->hide();
@@ -46,16 +34,18 @@ Smoothing::Smoothing(QImage src, ImageShop *parent)
     ui.sliderSigma->hide();
     ui.valueSigma->hide();
     adjustSize();
-    setWindowFlags(
-        (windowFlags()
-            | Qt::MSWindowsFixedSizeDialogHint)
-        & ~Qt::WindowContextHelpButtonHint);
+    setWindowFlags((windowFlags() | Qt::MSWindowsFixedSizeDialogHint) & ~Qt::WindowContextHelpButtonHint);
     ui.labelSigmaC->hide();
     ui.sliderSigmaC->hide();
     ui.valueSigmaC->hide();
     ui.labelSigmaS->hide();
     ui.sliderSigmaS->hide();
     ui.valueSigmaS->hide();
+}
+
+Smoothing::~Smoothing() {
+    thread.quit();
+    thread.wait();
 }
 
 double Smoothing::sigma() {
@@ -158,53 +148,83 @@ void Smoothing::onTuneUi() {
 }
 
 void Smoothing::onSetR() {
-    ui.valueR->setText(QString::number(ui.sliderR->value()).leftJustified(4, ' '));
+    ui.valueR->setText(QString::number(ui.sliderR->value()).leftJustified(4));
 }
 
 void Smoothing::onSetSigma() {
-    ui.valueSigma->setText(QString::number(sigma()).leftJustified(4, ' '));
+    ui.valueSigma->setText(QString::number(sigma()).leftJustified(4));
 }
 
 void Smoothing::onSetSigmaC() {
-    ui.valueSigmaC->setText(QString::number(sigmaC()).leftJustified(4, ' '));
+    ui.valueSigmaC->setText(QString::number(sigmaC()).leftJustified(4));
 }
 
 void Smoothing::onSetSigmaS() {
-    ui.valueSigmaS->setText(QString::number(sigmaS()).leftJustified(4, ' '));
+    ui.valueSigmaS->setText(QString::number(sigmaS()).leftJustified(4));
 }
 
 void Smoothing::onSmooth() {
+    emit sendParameter(
+        ui.comboBox->currentIndex(),
+        ui.sliderR->value(),
+        sigma(),
+        sigmaC(),
+        sigmaS()
+    );
+}
+
+Smoothing::Worker::Worker(QImage src, QObject *parent)
+    : QObject(parent) {
+    switch (src.format())
+    {
+    case QImage::Format_Grayscale8:
+        source = Mat(src.height(), src.width(), CV_8UC1, (void *)src.constBits(), src.bytesPerLine());
+        break;
+    case QImage::Format_RGB32:
+        source = Mat(src.height(), src.width(), CV_8UC4, (void *)src.constBits(), src.bytesPerLine());
+        cvtColor(source, source, COLOR_BGRA2RGB); // big endian
+        // cvtColor(source, source, COLOR_RGBA2RGB); // little endian
+        break;
+    case QImage::Format_ARGB32:
+        source = Mat(src.height(), src.width(), CV_8UC4, (void *)src.constBits(), src.bytesPerLine());
+        break;
+    default:
+        break;
+    }
+}
+
+void Smoothing::Worker::onSmooth(int st, int r, double sigma, double sigmaC, double sigmaS) {
     Mat target;
     int ksize;
-    switch (ui.comboBox->currentIndex())
+    switch (st)
     {
     case 0:
         // mean
-        ksize = ui.sliderR->value() * 2 - 1;
+        ksize = r * 2 - 1;
         blur(source, target, Size(ksize, ksize));
         break;
     case 1:
         // median
-        ksize = ui.sliderR->value() * 2 - 1;
+        ksize = r * 2 - 1;
         medianBlur(source, target, ksize);
         break;
     case 2:
         // maximum
-        ksize = ui.sliderR->value() * 2 - 1;
+        ksize = r * 2 - 1;
         dilate(source, target, getStructuringElement(MORPH_RECT, Size(ksize, ksize)));
         break;
     case 3:
         // minimum
-        ksize = ui.sliderR->value() * 2 - 1;
+        ksize = r * 2 - 1;
         erode(source, target, getStructuringElement(MORPH_RECT, Size(ksize, ksize)));
         break;
     case 4:
         // gaussian
-        GaussianBlur(source, target, Size(0, 0), sigma());
+        GaussianBlur(source, target, Size(0, 0), sigma);
         break;
     case 5:
         // bilateral
-        bilateralFilter(source, target, 0, sigmaC(), sigmaS());
+        bilateralFilter(source, target, 0, sigmaC, sigmaS);
         break;
     default:
         break;
@@ -229,9 +249,4 @@ void Smoothing::onSmooth() {
         qTarget = QImage(pSrc, target.cols, target.rows, target.step, QImage::Format_ARGB32).copy();
     }
     emit sendImage(qTarget);
-}
-
-void Smoothing::onHelp() {
-    SmoothingHelp *help = new SmoothingHelp(this);
-    help->exec();
 }

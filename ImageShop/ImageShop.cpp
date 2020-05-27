@@ -1,19 +1,19 @@
 #include "ImageShop.h"
 #include <QtWidgets/qfiledialog.h>
-#include <qdebug.h>
 #include "Help.h"
 #include "Formatting.h"
 #include "Smoothing.h"
-#include "EdgeDetection.h"
+#include "Sharpening.h"
 #include "Segmentation.h"
+#include "EdgeDetection.h"
+#include "FeatureExtraction.h"
 
 ImageShop::ImageShop(QWidget *parent)
     : QMainWindow(parent)
 {
     ui.setupUi(this);
     QPalette default_background;
-    default_background.setBrush(QPalette::Background, QBrush(
-        QPixmap(":/ImageShop/Resources/transparent.bmp")));
+    default_background.setBrush(QPalette::Background, QBrush(QPixmap(":/ImageShop/Resources/transparent.bmp")));
     ui.label->setPalette(default_background);
     ui.label_3->setPalette(default_background);
     source_status = new QLabel(ui.statusBar);
@@ -26,7 +26,7 @@ ImageShop::ImageShop(QWidget *parent)
     target_status->setFont(QFont("Consolas"));
     ui.statusBar->addPermanentWidget(target_status);
     updateTargetStatus();
-
+    setWindowIcon(QIcon(":/ImageShop/Resources/icon.ico"));
     connect(ui.actionOpen, &QAction::triggered, this, &ImageShop::onOpenFileAction);
     connect(ui.actionSave, &QAction::triggered, this, &ImageShop::onSaveFileAction);
     connect(ui.actionClose, &QAction::triggered, this, &ImageShop::onCloseFileAction);
@@ -40,10 +40,13 @@ ImageShop::ImageShop(QWidget *parent)
     connect(ui.actionAbout, &QAction::triggered, this, &ImageShop::onAboutAction);
     connect(ui.pbCopyFromSource, &QPushButton::clicked, this, &ImageShop::onCopyFromSource);
     connect(ui.pbCopyToSource, &QPushButton::clicked, this, &ImageShop::onCopyToSource);
+
+    showMaximized();
 }
 
 void ImageShop::onOpenFileAction() {
-    QString path = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开文件"), ".", "Image(*.bmp *.png *.tif *.tiff *.jpg)");
+    QString path = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开文件"),
+        ".", "Image(*.bmp *.png *.tif *.tiff *.jpg)");
     if (path.isEmpty()) {
         ui.statusBar->showMessage(QString::fromLocal8Bit("警告：路径为空！"), 3000);
         return;
@@ -87,7 +90,8 @@ void ImageShop::onSmoothingAction() {
 }
 
 void ImageShop::onSharpeningAction() {
-
+    Sharpening *sharpening = new Sharpening(source_image, this);
+    sharpening->exec();
 }
 
 void ImageShop::onSegmentationAction() {
@@ -101,7 +105,8 @@ void ImageShop::onEdgeDetectionAction() {
 }
 
 void ImageShop::onFeatureExtractionAction() {
-
+    FeatureExtraction *feature_extraction = new FeatureExtraction(source_image, this);
+    feature_extraction->exec();
 }
 
 void ImageShop::onAboutAction() {
@@ -129,8 +134,7 @@ void ImageShop::onReceiveTarget(QImage image) {
 
 void ImageShop::updateSourceStatus() {
     if (source_image.isNull()) {
-        source_status->setText(QString("S:Null")
-            .leftJustified(25));
+        source_status->setText(QString("S:Null").leftJustified(25));
         return;
     }
     QString format;
@@ -160,8 +164,7 @@ void ImageShop::updateSourceStatus() {
 
 void ImageShop::updateTargetStatus() {
     if (target_image.isNull()) {
-        target_status->setText(QString("T:Null")
-            .leftJustified(25));
+        target_status->setText(QString("T:Null").leftJustified(25));
         return;
     }
     QString format;

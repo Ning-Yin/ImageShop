@@ -5,15 +5,12 @@ Formatting::Formatting(QImage src, ImageShop *parent)
     : QDialog(parent), source(src) {
     ui.setupUi(this);
     
-    connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-        this, &Formatting::onFormat);
+    connect(ui.comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &Formatting::onFormat);
     connect(ui.pushButton, &QPushButton::clicked, this, &Formatting::accept);
     connect(this, &Formatting::sendImage, parent, &ImageShop::onReceiveTarget);
 
     adjustSize();
-    setWindowFlags(
-        (windowFlags() | Qt::MSWindowsFixedSizeDialogHint)
-        & ~Qt::WindowContextHelpButtonHint);
+    setWindowFlags((windowFlags() | Qt::MSWindowsFixedSizeDialogHint) & ~Qt::WindowContextHelpButtonHint);
 }
 
 void Formatting::onFormat() {

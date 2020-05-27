@@ -163,8 +163,6 @@
     <addaction name="actionSegmentation"/>
     <addaction name="actionEdgeDetection"/>
     <addaction name="actionFeatureExtraction"/>
-    <addaction name="separator"/>
-    <addaction name="actionMagicWand"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
@@ -270,9 +268,9 @@
     <string>Ctrl+F, Ctrl+F</string>
    </property>
   </action>
-  <action name="actionMagicWand">
+  <action name="actionIntelligentScissor">
    <property name="text">
-    <string>魔术棒</string>
+    <string>智能剪刀</string>
    </property>
   </action>
  </widget>

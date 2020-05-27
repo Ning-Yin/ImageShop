@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/ImageShop">
         <file>Resources/transparent.bmp</file>
+        <file>Resources/icon.ico</file>
     </qresource>
 </RCC>

@@ -9,7 +9,6 @@ class ImageShop : public QMainWindow
 
 public:
     ImageShop(QWidget *parent = Q_NULLPTR);
-
 public slots:
     void onOpenFileAction();
     void onSaveFileAction();

@@ -8,7 +8,9 @@ Segmentation::Segmentation(QImage src, ImageShop *parent)
     : QDialog(parent) {
     ui.setupUi(this);
 
-    source = Mat(src.height(), src.width(), CV_8UC1, (void *)src.constBits(), src.bytesPerLine());
+    QImage src_gray = src.convertToFormat(QImage::Format_Grayscale8);
+    source = Mat(src_gray.height(), src_gray.width(), CV_8UC1, (void *)src_gray.constBits(), src_gray.bytesPerLine()).clone();
+
     connect(ui.sliderThreshold, &QSlider::valueChanged, this, &Segmentation::onSegment);
     connect(ui.sliderThreshold, &QSlider::valueChanged, this, &Segmentation::onSetThreshold);
     connect(ui.pushButtonOtsu, &QPushButton::clicked, this, &Segmentation::onOtsu);
@@ -17,10 +19,7 @@ Segmentation::Segmentation(QImage src, ImageShop *parent)
     connect(this, &Segmentation::sendImage, parent, &ImageShop::onReceiveTarget);
 
     adjustSize();
-    setWindowFlags(
-        (windowFlags()
-            | Qt::MSWindowsFixedSizeDialogHint)
-        & ~Qt::WindowContextHelpButtonHint);
+    setWindowFlags((windowFlags() | Qt::MSWindowsFixedSizeDialogHint) & ~Qt::WindowContextHelpButtonHint);
 }
 
 void Segmentation::onSetThreshold() {
@@ -46,28 +45,10 @@ void Segmentation::onOtsu() {
     Mat target;
     int t = threshold(source, target, 0, 255, THRESH_OTSU);
     ui.sliderThreshold->setValue(t);
-    //QImage qTarget;
-    //qTarget = QImage(target.cols, target.rows, QImage::Format_Grayscale8);
-    //uchar *pSrc = target.data;
-    //for (int row = 0; row < target.rows; row++) {
-    //    uchar *pDest = qTarget.scanLine(row);
-    //    memcpy(pDest, pSrc, target.cols);
-    //    pSrc += target.step;
-    //}
-    //emit sendImage(qTarget);
 }
 
 void Segmentation::onTriangle() {
     Mat target;
     int t = threshold(source, target, 0, 255, THRESH_TRIANGLE);
     ui.sliderThreshold->setValue(t);
-    //QImage qTarget;
-    //qTarget = QImage(target.cols, target.rows, QImage::Format_Grayscale8);
-    //uchar *pSrc = target.data;
-    //for (int row = 0; row < target.rows; row++) {
-    //    uchar *pDest = qTarget.scanLine(row);
-    //    memcpy(pDest, pSrc, target.cols);
-    //    pSrc += target.step;
-    //}
-    //emit sendImage(qTarget);
 }

@@ -11,6 +11,7 @@ class Sharpening : public QDialog
 public:
     Sharpening(QImage src, ImageShop *parent = Q_NULLPTR);
 public slots:
+    void onTuneUi();
     void onSetR();
     void onSharpen();
 signals:

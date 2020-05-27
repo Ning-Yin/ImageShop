@@ -9,10 +9,10 @@ class Formatting : public QDialog
 
 public:
     Formatting(QImage src, ImageShop *parent = Q_NULLPTR);
-signals:
-    void sendImage(QImage);
 public slots:
     void onFormat();
+signals:
+    void sendImage(QImage);
 private:
     Ui::Formatting ui;
     QImage source;
