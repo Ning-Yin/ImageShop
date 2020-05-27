@@ -1,0 +1,7 @@
+.vs/
+x64/
+*.sln
+*.vcxproj*
+*.tif
+*.png
+*.jpg
